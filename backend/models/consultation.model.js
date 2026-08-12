@@ -1,0 +1,1 @@
+// Schema for AI summaries & doctor status

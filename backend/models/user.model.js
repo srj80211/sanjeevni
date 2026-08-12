@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema({
-    name: {
+    fullName: {
         type: String,
         required: true
     },
@@ -26,7 +26,23 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
-    }
+    },
+    biometricTemplate: {
+        type: String,
+        unique: true,
+        index: true
+    },
+    // For Asha worker mapping
+    villageCode: {
+        type: String,
+        required: true
+    },
+    // Storing the 128-dimension vector from the AI model
+    faceEmbedding: {
+        type: [Number],
+        required: true
+    },
+    lastConsultation: { type: Date }
 },{timestamps:true});
 
 userSchema.pre("save", async function(next){
