@@ -2,8 +2,13 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { successResponse } from "../utils/apiResponse.js";
 import { AppError } from "../utils/AppError.js";
 import { Users as User } from "../models/user.model.js";
-import { login, verifyFaceIdentity } from "../services/auth.service.js";
+import { signup, login, verifyFaceIdentity } from "../services/auth.service.js";
 import { getFaceEmbedding, verifyFaceWithDeepFace } from "../services/face.service.js";
+
+export const signUp = asyncHandler(async (req, res) => {
+    const result = await signup(req.body);
+    successResponse(res, 201, result);
+});
 
 export const signIn = asyncHandler(async (req, res) => {
     const result = await login(req.body);
