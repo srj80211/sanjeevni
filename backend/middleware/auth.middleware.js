@@ -10,7 +10,8 @@ export const protect = asyncHandler(async (req, res, next) => {
         throw new AppError("Not authorized, token missing", 401);
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const secret = process.env.JWT_SECRET || "sanjeevni_jwt_secret_key_2026";
+    const decoded = jwt.verify(token, secret);
 
     const user = await User.findById(decoded.id).select("-password -faceEmbedding -biometricTemplate");
     if (!user) {

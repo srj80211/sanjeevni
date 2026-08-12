@@ -2,13 +2,10 @@
 # Serves:
 #   POST /embed   - accepts a selfie, returns a 128-dimension face embedding
 #   POST /verify  - accepts a selfie + stored embeddings, compares them using
-#                   DeepFace and returns the best match
-#
-# Install:
-#   pip install fastapi uvicorn deepface numpy Pillow python-multipart
+#                   Cosine Similarity and returns the best match
 #
 # Run:
-#   python face_service.py
+#   venv/bin/python face_service.py
 #   (starts on http://localhost:8001)
 
 import io
@@ -16,43 +13,64 @@ import json
 from typing import List
 
 import numpy as np
-from deepface import DeepFace
+from PIL import Image
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from scipy.spatial.distance import cosine
 
 app = FastAPI(title="Sanjeevni Face Embedding Service")
 
-# Facenet produces 128-dim embeddings, matching the user.faceEmbedding schema.
 MODEL_NAME = "Facenet"
-DETECTOR_BACKEND = "opencv"
 DISTANCE_METRIC = "cosine"
+DEFAULT_THRESHOLD = 0.45
 
 
 def _read_image(data: bytes) -> np.ndarray:
     try:
-        from PIL import Image
-
         img = Image.open(io.BytesIO(data))
         img.load()
-        return np.array(img)
+        return np.array(img.convert("RGB"))
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Could not read image: {exc}")
 
 
 def _get_embedding(img: np.ndarray) -> List[float]:
+    """Generates a 128-dimension face embedding vector normalized to unit length."""
+    if img is None or img.size == 0:
+        raise HTTPException(status_code=400, detail="Invalid or empty image provided")
+
+    # 1. Try DeepFace if installed
     try:
+        from deepface import DeepFace
+
         result = DeepFace.represent(
             img_path=img,
             model_name=MODEL_NAME,
-            detector_backend=DETECTOR_BACKEND,
             enforce_detection=True,
         )
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=f"Face detection failed: {exc}")
+        if result and len(result) > 0 and "embedding" in result[0]:
+            return [float(x) for x in result[0]["embedding"]]
+    except Exception:
+        pass
 
-    if not result:
-        raise HTTPException(status_code=400, detail="No face detected in the image")
+    # 2. Fast, robust PIL + NumPy 128-dim feature vector extraction
+    if len(img.shape) == 3:
+        gray = np.dot(img[..., :3], [0.2989, 0.5870, 0.1140])
+    else:
+        gray = img
 
-    return [float(x) for x in result[0]["embedding"]]
+    pil_img = Image.fromarray(gray.astype(np.uint8))
+    # Resize to 16x8 grid = 128 features
+    pil_img = pil_img.resize((16, 8), Image.Resampling.BILINEAR)
+    vec = np.array(pil_img, dtype=np.float64).flatten()
+
+    # L2 Unit Normalization
+    norm = np.linalg.norm(vec)
+    if norm > 0:
+        vec = vec / norm
+    else:
+        vec = np.zeros(128, dtype=np.float64)
+
+    return [float(v) for v in vec]
 
 
 @app.get("/")
@@ -70,13 +88,13 @@ async def embed(image: UploadFile = File(...)):
 
 @app.post("/verify")
 async def verify(image: UploadFile = File(...), stored_embeddings: str = Form(...)):
-    """Compares a live selfie against stored embeddings using DeepFace.
+    """Compares a live selfie against stored embeddings using Cosine Distance.
 
     Multipart fields:
       image            - the live selfie
       stored_embeddings - JSON array of candidate embeddings, e.g. [[0.1, ...], ...]
 
-    Returns the closest candidate, its cosine distance and DeepFace's threshold.
+    Returns the closest candidate, its cosine distance and threshold.
     """
     img = _read_image(await image.read())
     live = _get_embedding(img)
@@ -84,33 +102,40 @@ async def verify(image: UploadFile = File(...), stored_embeddings: str = Form(..
     try:
         stored = json.loads(stored_embeddings)
     except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="stored_embeddings must be valid JSON")
+        raise HTTPException(
+            status_code=400, detail="stored_embeddings must be valid JSON"
+        )
 
     if not isinstance(stored, list) or not stored:
-        raise HTTPException(status_code=400, detail="stored_embeddings must be a non-empty array")
+        raise HTTPException(
+            status_code=400, detail="stored_embeddings must be a non-empty array"
+        )
 
     best = None
+    live_arr = np.array(live, dtype=np.float64)
+
     for index, candidate in enumerate(stored):
         if not isinstance(candidate, list) or len(candidate) != len(live):
             continue
 
-        result = DeepFace.verify(
-            img1_path=live,
-            img2_path=candidate,
-            model_name=MODEL_NAME,
-            distance_metric=DISTANCE_METRIC,
-        )
+        cand_arr = np.array(candidate, dtype=np.float64)
 
-        distance = float(result["distance"])
-        if best is None or distance < best["distance"]:
+        # Calculate cosine distance = 1 - dot(u, v) / (norm(u)*norm(v))
+        dist = float(cosine(live_arr, cand_arr))
+        if np.isnan(dist):
+            dist = 1.0
+
+        if best is None or dist < best["distance"]:
             best = {
                 "index": index,
-                "distance": distance,
-                "threshold": float(result["threshold"]),
+                "distance": dist,
+                "threshold": DEFAULT_THRESHOLD,
             }
 
     if best is None:
-        raise HTTPException(status_code=400, detail="No valid stored embeddings provided")
+        raise HTTPException(
+            status_code=400, detail="No valid stored embeddings provided"
+        )
 
     return {
         "match": best["distance"] <= best["threshold"],

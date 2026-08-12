@@ -1,4 +1,4 @@
-import { AshaWorker } from "../models/asha.model.js";
+import { AshaWorkers } from "../models/asha.model.js";
 
 export const getAshaWorkers = async () => AshaWorker.find({});
 

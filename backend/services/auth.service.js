@@ -3,8 +3,39 @@ import jwt from "jsonwebtoken";
 import { Users as User } from "../models/user.model.js";
 import { AppError } from "../utils/AppError.js";
 
+const JWT_SECRET = process.env.JWT_SECRET || "sanjeevni_jwt_secret_key_2026";
+
 const signToken = (user) =>
-    jwt.sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: "15m" });
+    jwt.sign({ id: user._id, email: user.email }, JWT_SECRET, { expiresIn: "15m" });
+
+export const signup = async (userData) => {
+    const { fullName, mobile, address, aadhar, email, password, villageCode } = userData || {};
+
+    if (!fullName || !mobile || !address || !aadhar || !email || !password || !villageCode) {
+        throw new AppError("All fields (fullName, mobile, address, aadhar, email, password, villageCode) are required", 400);
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+        throw new AppError("User with this email already exists", 409);
+    }
+
+    const user = await User.create({
+        fullName,
+        mobile,
+        address,
+        aadhar: String(aadhar),
+        email,
+        password,
+        villageCode
+    });
+
+    const token = signToken(user);
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    return { token, user: userObj };
+};
 
 export const login = async ({ email, password }) => {
     const user = await User.findOne({ email }).select("+password");

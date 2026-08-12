@@ -1,4 +1,4 @@
-import { Consultation } from "../models/consultation.model.js";
+import { Consultations } from "../models/consultation.model.js";
 
 export const getConsultations = async () => Consultation.find({});
 

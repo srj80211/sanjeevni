@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     aadhar:{
-        type: Number,
+        type: String,
         required: true
     },
     email: {
@@ -29,8 +29,7 @@ const userSchema = new mongoose.Schema({
     },
     biometricTemplate: {
         type: String,
-        unique: true,
-        index: true
+        sparse: true
     },
     // For Asha worker mapping
     villageCode: {
@@ -39,15 +38,14 @@ const userSchema = new mongoose.Schema({
     },
     // Storing the 128-dimension vector from the AI model
     faceEmbedding: {
-        type: [Number],
-        required: true
+        type: [Number]
     },
     lastConsultation: { type: Date }
 },{timestamps:true});
 
-userSchema.pre("save", async function(next){
-    const saltRounds = 12;
-    if(this.isModified("password")) {
+userSchema.pre("save", async function(){
+    if (this.isModified("password")) {
+        const saltRounds = 12;
         const salt = await bcrypt.genSalt(saltRounds);
         this.password = await bcrypt.hash(this.password, salt);
     }
