@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX } from 'lucide-react';
 
-export default function ListenButton({ textToSpeak, label = 'Listen', subtitle = 'Tap to hear instructions' }) {
+export default function ListenButton({ textToSpeak, label = 'Listen', subtitle = 'Tap to hear audio', lang = 'en' }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [supported, setSupported] = useState(true);
 
@@ -24,10 +24,11 @@ export default function ListenButton({ textToSpeak, label = 'Listen', subtitle =
 
     synth.cancel(); // Stop any existing speech
 
-    const defaultText = textToSpeak || 'Please look straight into the camera and make sure your face is clearly visible.';
+    const defaultText = textToSpeak || 'Welcome to Sanjeevani healthcare. Please follow the instructions on your screen.';
     const utterance = new SpeechSynthesisUtterance(defaultText);
     utterance.rate = 0.95;
     utterance.pitch = 1.0;
+    utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-US';
 
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
@@ -46,12 +47,12 @@ export default function ListenButton({ textToSpeak, label = 'Listen', subtitle =
         aria-label={label}
       >
         <div className="sound-wave-icon">
-          {isSpeaking ? <VolumeX size={20} /> : <Volume2 size={20} />}
+          {isSpeaking ? <VolumeX size={18} /> : <Volume2 size={18} />}
           {isSpeaking && <span className="audio-pulse-ring" />}
         </div>
         <span className="listen-label">{label}</span>
       </button>
-      <span className="listen-subtitle">{subtitle}</span>
+      {subtitle && <span className="listen-subtitle">{subtitle}</span>}
     </div>
   );
 }
