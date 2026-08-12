@@ -1,35 +1,34 @@
+// Schema for AI summaries & doctor status
 import mongoose from "mongoose";
 
 const consultationSchema = new mongoose.Schema({
-    user: {
+    patientId : {
         type: mongoose.Schema.Types.ObjectId,
         ref: "user",
         required: true
     },
-    aiSummary: {
-        type: String,
-        required: true
-    },
-    symptoms: {
+    symptomsSummary: {
         type: [String],
         default: []
     },
-    diagnosis: {
+    aiDiagnosisBrief: {
         type: String
     },
-    medicinesPrescribed: {
-        type: [String],
-        default: []
-    },
-    doctorStatus: {
+    // ADDED: Priority field for Medical Triage
+    priority: {
         type: String,
-        enum: ["pending", "reviewed", "handed-off"],
-        default: "pending"
+        enum: ["Low", "Medium", "High", "Emergency"],
+        default: "Low"
     },
-    esanjeevaniRedirected: {
-        type: Boolean,
-        default: false
+    status: {
+        type: String,
+        enum: ["Pending_AI", "Awaiting_Doctor", "Consultation_Complete", "Medicine_Delivered"],
+        default: "Pending_AI"
+    },
+    ashaWorkerAssigned: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "AshaWorker"
     }
 }, { timestamps: true });
 
-export const Consultation = mongoose.model("consultation", consultationSchema);
+export const Consultations = mongoose.model("consultation", consultationSchema);
