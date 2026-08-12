@@ -1,23 +1,32 @@
+// Schema for local health workers
+
 import mongoose from "mongoose";
 
-const ashaSchema = new mongoose.Schema({
-    name: {
+const ashaWorkerSchema = new mongoose.Schema({
+    fullName: {
         type: String,
-        required: true
+        required: true,
+        trim: true
     },
     mobile: {
         type: String,
-        required: true
+        required: true,
+        unique: true
     },
     villageCode: {
         type: String,
-        required: true
+        required: true,
+        index: true // Indexed for fast lookup when a consultation ends
     },
-    assignedUsers: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: "user",
-        default: []
-    }
+    isAvailable: {
+        type: Boolean,
+        default: true
+    },
+    // Track current assignments to manage workload
+    activeTasks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "consultation"
+    }]
 }, { timestamps: true });
 
-export const AshaWorker = mongoose.model("asha", ashaSchema);
+export const AshaWorkers = mongoose.model("AshaWorker", ashaWorkerSchema);
