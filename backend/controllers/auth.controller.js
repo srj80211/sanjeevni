@@ -1,7 +1,6 @@
-const { user } = require('react');
-const User = require('../models/user.model');
+import { Users as User } from '../models/user.model.js';
 
-exports.verifyFaceIdentity = async (req, res) => {
+export const verifyFaceIdentity = async (req, res) => {
     try{
         const { liveEmbedding } = req.body;
 
