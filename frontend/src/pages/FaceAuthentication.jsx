@@ -53,7 +53,7 @@ export default function FaceAuthentication({ onAuthenticated }) {
 
           setTimeout(() => {
             if (onAuthenticated) {
-              onAuthenticated(authUser);
+              onAuthenticated(authUser, authToken);
             }
           }, 1500);
         } else {
@@ -77,7 +77,7 @@ export default function FaceAuthentication({ onAuthenticated }) {
 
           setTimeout(() => {
             if (onAuthenticated) {
-              onAuthenticated(result.data.user);
+              onAuthenticated(result.data.user, result.data.token);
             }
           }, 1500);
         } else {
@@ -240,6 +240,7 @@ export default function FaceAuthentication({ onAuthenticated }) {
             <FaceCamera
               ref={cameraRef}
               isScanning={isScanning}
+              authStatus={authStatus}
               onCameraReady={setCameraReady}
               cameraError={cameraError}
               setCameraError={setCameraError}

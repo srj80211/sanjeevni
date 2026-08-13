@@ -2,8 +2,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { successResponse } from "../utils/apiResponse.js";
 import { AppError } from "../utils/AppError.js";
 import { Users as User } from "../models/user.model.js";
-import { signup, login, verifyFaceIdentity } from "../services/auth.service.js";
+import { signup, login, verifyFaceIdentity, signToken } from "../services/auth.service.js";
 import { getFaceEmbedding, verifyFaceWithDeepFace } from "../services/face.service.js";
+import jwt from "jsonwebtoken";
 
 export const signUp = asyncHandler(async (req, res) => {
     const result = await signup(req.body);
@@ -66,9 +67,15 @@ const respond = (user, res) => {
             message: "New Registration Required"
         });
     }
+    const token = signToken(user);
+    const userObj = user.toObject ? user.toObject() : { ...user };
+    delete userObj.password;
+    delete userObj.faceEmbedding;
+    delete userObj.biometricTemplate;
+
     return res.status(200).json({
         success: true,
         message: "Verified",
-        data: { user }
+        data: { user: userObj, token }
     });
 };

@@ -9,7 +9,7 @@ import React, {
 import { Camera, RefreshCw, AlertTriangle, UserCheck } from 'lucide-react';
 
 const FaceCamera = forwardRef(function FaceCamera(
-  { isScanning, onCameraReady, cameraError, setCameraError },
+  { isScanning, authStatus, onCameraReady, cameraError, setCameraError },
   ref
 ) {
   const videoRef = useRef(null);
@@ -147,6 +147,7 @@ const FaceCamera = forwardRef(function FaceCamera(
         {/* Framing & Scanning Overlays (Only visible when stream is active) */}
         {streamActive && (
           <div className="camera-overlay">
+            {authStatus === 'success' && <div className="biometric-success-ring" />}
             {/* Outer pulse ring */}
             <div className={`scan-ring ${isScanning ? 'pulsing' : ''}`} />
 
