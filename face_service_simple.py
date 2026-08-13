@@ -22,7 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DISTANCE_THRESHOLD = 0.35
+DISTANCE_THRESHOLD = 0.08
 
 
 def _normalize_vector(vec: List[float]) -> List[float]:
@@ -48,14 +48,18 @@ def _read_image(data: bytes) -> np.ndarray:
 
 def _detect_face(gray: np.ndarray) -> np.ndarray:
     if not hasattr(cv2, "CascadeClassifier"):
-        h, w = gray.shape
-        return gray[0:h, 0:w]
+        raise HTTPException(
+            status_code=400,
+            detail="Face detector is not available in this environment. Face verification is disabled for safety.",
+        )
 
     cascade_path = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
     cascade = cv2.CascadeClassifier(cascade_path)
     if cascade.empty():
-        h, w = gray.shape
-        return gray[0:h, 0:w]
+        raise HTTPException(
+            status_code=400,
+            detail="Face detector model is missing. Face verification is disabled for safety.",
+        )
 
     faces = cascade.detectMultiScale(
         gray,
@@ -65,8 +69,7 @@ def _detect_face(gray: np.ndarray) -> np.ndarray:
     )
 
     if len(faces) == 0:
-        h, w = gray.shape
-        return gray[0:h, 0:w]
+        raise HTTPException(status_code=400, detail="No face detected in the image")
 
     x, y, w, h = max(faces, key=lambda box: box[2] * box[3])
     return gray[y : y + h, x : x + w]
