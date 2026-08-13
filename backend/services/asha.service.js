@@ -1,5 +1,5 @@
-import { AshaWorker } from "../models/asha.model.js";
+import { AshaWorkers } from "../models/asha.model.js";
 
-export const getAshaWorkers = async () => AshaWorker.find({});
+export const getAshaWorkers = async () => AshaWorkers.find({});
 
-export const createAshaWorker = async (data) => AshaWorker.create(data);
+export const createAshaWorker = async (data) => AshaWorkers.create(data);

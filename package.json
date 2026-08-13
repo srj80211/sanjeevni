@@ -6,6 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon backend/server.js",
+    "dev:backend": "nodemon backend/server.js",
+    "dev:frontend": "npm --prefix frontend run dev -- --host 0.0.0.0",
+    "dev:all": "npm run dev:backend & npm run dev:frontend",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

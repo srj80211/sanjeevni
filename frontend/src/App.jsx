@@ -1,12 +1,28 @@
-import FaceAuth from './FaceAuth'
-import './App.css'
+import React, { useState } from 'react';
+import FaceAuthentication from './pages/FaceAuthentication';
+import Home from './components/Home';
+import './App.css';
 
 function App() {
+  const [authenticatedUser, setAuthenticatedUser] = useState(null);
+
+  const handleAuthenticated = (user) => {
+    setAuthenticatedUser(user);
+  };
+
+  const handleLogout = () => {
+    setAuthenticatedUser(null);
+  };
+
   return (
-    <main className="app">
-      <FaceAuth />
-    </main>
-  )
+    <div className="sanjeevani-app">
+      {authenticatedUser ? (
+        <Home user={authenticatedUser} onLogout={handleLogout} />
+      ) : (
+        <FaceAuthentication onAuthenticated={handleAuthenticated} />
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;

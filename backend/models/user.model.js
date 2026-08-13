@@ -40,6 +40,7 @@ const userSchema = new mongoose.Schema({
     // Storing the 128-dimension vector from the AI model
     faceEmbedding: {
         type: [Number],
+        default: [],
         required: true
     },
     lastConsultation: { type: Date }
